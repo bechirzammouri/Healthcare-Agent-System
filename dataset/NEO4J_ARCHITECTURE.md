@@ -206,109 +206,29 @@ FOR (i:Immunization) ON (i.code);
 
 ## 🔗 Relationship Types
 
-### Patient-Centric Relationships
+### Graph Architecture
+
+This graph follows an **encounter-centric model** where:
+- Patients connect directly only to Encounters
+- All clinical events (conditions, medications, procedures, etc.) are accessed through Encounters
+- This eliminates redundancy and provides clear temporal context for all medical events
+
+### Patient Relationships
 
 #### 1. Patient → Encounter
 ```cypher
-(:Patient)-[:HAD_ENCOUNTER {date: Date}]->(:Encounter)
+(:Patient)-[:HAD_ENCOUNTER]->(:Encounter)
 ```
 - **Direction:** Patient to Encounter
-- **Properties:** `date` (when the encounter occurred)
+- **Properties:** None needed (date is on Encounter node)
 - **Cardinality:** One patient to many encounters
+- **Note:** This is the ONLY direct relationship from Patient nodes
 
 ---
 
-#### 2. Patient → Condition
-```cypher
-(:Patient)-[:HAS_CONDITION {
-  startDate: Date,
-  stopDate: Date (nullable),
-  diagnosedAt: String (encounter_id)
-}]->(:Condition)
-```
-- **Direction:** Patient to Condition
-- **Properties:** 
-  - `startDate`: When condition started
-  - `stopDate`: When condition ended (null if ongoing)
-  - `diagnosedAt`: Encounter ID where diagnosed
-- **Cardinality:** Many-to-many
+### Encounter Relationships (Clinical Events)
 
----
-
-#### 3. Patient → Medication
-```cypher
-(:Patient)-[:PRESCRIBED {
-  startDate: Date,
-  stopDate: Date (nullable),
-  prescribedAt: String (encounter_id),
-  reasonCode: String (nullable)
-}]->(:Medication)
-```
-- **Direction:** Patient to Medication
-- **Properties:**
-  - `startDate`, `stopDate`: Duration of prescription
-  - `prescribedAt`: Encounter where prescribed
-  - `reasonCode`: Condition code it treats
-- **Cardinality:** Many-to-many
-
----
-
-#### 4. Patient → Procedure
-```cypher
-(:Patient)-[:UNDERWENT {
-  date: Date,
-  encounterId: String,
-  reasonCode: String (nullable),
-  reasonDescription: String (nullable)
-}]->(:Procedure)
-```
-- **Direction:** Patient to Procedure
-- **Properties:**
-  - `date`: When performed
-  - `encounterId`: Where performed
-  - `reasonCode`, `reasonDescription`: Why performed
-
----
-
-#### 5. Patient → Careplan
-```cypher
-(:Patient)-[:ENROLLED_IN {
-  id: String,
-  startDate: Date,
-  stopDate: Date (nullable),
-  encounterId: String,
-  reasonCode: String (nullable),
-  reasonDescription: String (nullable)
-}]->(:Careplan)
-```
-
----
-
-#### 6. Patient → Immunization
-```cypher
-(:Patient)-[:RECEIVED {
-  date: Date,
-  encounterId: String
-}]->(:Immunization)
-```
-
----
-
-#### 7. Patient → Observation
-```cypher
-(:Patient)-[:HAD_OBSERVATION {
-  date: Date,
-  encounterId: String,
-  value: String (nullable),
-  units: String (nullable)
-}]->(:Observation)
-```
-
----
-
-### Encounter Relationships
-
-#### 8. Encounter → Reason
+#### 2. Encounter → Reason
 ```cypher
 (:Encounter)-[:HAS_REASON]->(:Reason)
 ```
@@ -318,45 +238,62 @@ FOR (i:Immunization) ON (i.code);
 
 ---
 
-#### 9. Encounter → Condition
+#### 3. Encounter → Condition
 ```cypher
 (:Encounter)-[:DIAGNOSED]->(:Condition)
 ```
 - Tracks which conditions were diagnosed during which encounters
+- **Properties:** `startDate`, `stopDate` for condition timeline
 
 ---
 
-#### 10. Encounter → Medication
+#### 4. Encounter → Medication
 ```cypher
 (:Encounter)-[:PRESCRIBED_MEDICATION]->(:Medication)
 ```
+- Links medications prescribed during encounters
+- **Properties:** `startDate`, `stopDate`, `reasonCode`
 
 ---
 
-#### 11. Encounter → Procedure
+#### 5. Encounter → Procedure
 ```cypher
 (:Encounter)-[:PERFORMED]->(:Procedure)
 ```
+- Links procedures performed during encounters
+- **Properties:** `date`, `reasonCode`, `reasonDescription`
 
 ---
 
-#### 12. Encounter → Immunization
+#### 6. Encounter → Immunization
 ```cypher
 (:Encounter)-[:ADMINISTERED]->(:Immunization)
 ```
+- Links immunizations administered during encounters
+- **Properties:** `date`
 
 ---
 
-#### 13. Encounter → Observation
+#### 7. Encounter → Observation
 ```cypher
 (:Encounter)-[:RECORDED]->(:Observation)
 ```
+- Links observations recorded during encounters
+- **Properties:** `date`, `value`, `units`
+
+---
+
+#### 8. Encounter → Careplan
+```cypher
+(:Encounter)-[:HAS_CAREPLAN]->(:Careplan)
+```
+- Links care plans created during encounters
 
 ---
 
 ### Treatment Relationships
 
-#### 14. Medication → Condition
+#### 9. Medication → Condition
 ```cypher
 (:Medication)-[:TREATS]->(:Condition)
 ```
@@ -366,11 +303,11 @@ FOR (i:Immunization) ON (i.code);
 
 ---
 
-#### 15. Careplan → Condition
+#### 10. Careplan → Reason
 ```cypher
-(:Careplan)-[:MANAGES]->(:Condition)
+(:Careplan)-[:FOR_REASON]->(:Reason)
 ```
-- Links careplans to conditions they manage
+- Links careplans to the medical reasons they address
 
 ---
 
@@ -403,6 +340,10 @@ FOR (m:Medication) REQUIRE m.code IS UNIQUE;
 CREATE CONSTRAINT immunization_code_unique IF NOT EXISTS
 FOR (i:Immunization) REQUIRE i.code IS UNIQUE;
 
+// Reason constraint
+CREATE CONSTRAINT reason_code_unique IF NOT EXISTS
+FOR (r:Reason) REQUIRE r.reasonCode IS UNIQUE;
+
 
 // 2. CREATE INDEXES (for query performance)
 // ============================================
@@ -429,6 +370,10 @@ FOR (m:Medication) ON (m.code);
 CREATE INDEX immunization_code_index IF NOT EXISTS
 FOR (i:Immunization) ON (i.code);
 
+// Reason indexe
+CREATE INDEX reason_code_index IF NOT EXISTS
+FOR (i:Reason) ON (i.reasonCode);
+
 // 3. VERIFY SCHEMA
 // ============================================
 
@@ -445,6 +390,8 @@ SHOW INDEXES;
 
 ### Loading Order (to maintain referential integrity)
 
+**Encounter-Centric Model:** All clinical data flows through encounters, eliminating redundant patient relationships.
+
 1. **Load Catalog Nodes** (entities without dependencies)
    - Reasons
    - Conditions
@@ -457,26 +404,25 @@ SHOW INDEXES;
    - Patients
    - Encounters
 
-3. **Load Time-based Entities**
-   - Careplans
+3. **Create Patient-Encounter Relationships**
+   - Patient → Encounter (ONLY direct patient relationship)
 
-4. **Create Patient Relationships**
-   - Patient → Condition
-   - Patient → Medication
-   - Patient → Procedure
-   - Patient → Immunization
-   - Patient → Observation
-   - Patient → Encounter
-   - Patient → Careplan
-
-5. **Create Encounter Relationships**
+4. **Create Encounter-Clinical Event Relationships**
+   - Encounter → Reason
    - Encounter → Condition
    - Encounter → Medication
    - Encounter → Procedure
    - Encounter → Immunization
    - Encounter → Observation
 
-6. **Create Treatment Relationship**
+5. **Load Time-based Entities**
+   - Careplans
+
+6. **Create Careplan Relationships**
+   - Encounter → Careplan
+   - Careplan → Reason
+
+7. **Create Treatment Relationships**
    - Medication → Condition (TREATS)
 
 ---
@@ -515,16 +461,16 @@ MERGE (c:Condition {code: row.CODE})
 ON CREATE SET c.description = row.DESCRIPTION;
 ```
 
-### 3. Create Patient-Condition Relationships
+### 3. Create Encounter-Condition Relationships
 
 ```cypher
+// Link conditions to encounters (NO direct patient relationships)
 LOAD CSV WITH HEADERS FROM 'file:///sampled_conditions.csv' AS row
-MATCH (p:Patient {id: row.PATIENT})
+MATCH (e:Encounter {id: row.ENCOUNTER})
 MATCH (c:Condition {code: row.CODE})
-CREATE (p)-[:HAS_CONDITION {
+CREATE (e)-[:DIAGNOSED {
   startDate: date(row.START),
-  stopDate: CASE WHEN row.STOP IS NOT NULL AND row.STOP <> '' THEN date(row.STOP) ELSE null END,
-  diagnosedAt: row.ENCOUNTER
+  stopDate: CASE WHEN row.STOP IS NOT NULL AND row.STOP <> '' THEN date(row.STOP) ELSE null END
 }]->(c);
 ```
 
@@ -550,11 +496,11 @@ CREATE (e:Encounter {
   description: row.DESCRIPTION
 });
 
-// Create Patient-Encounter relationships
+// Create Patient-Encounter relationships (ONLY direct patient relationship)
 LOAD CSV WITH HEADERS FROM 'file:///sampled_encounters.csv' AS row
 MATCH (p:Patient {id: row.PATIENT})
 MATCH (e:Encounter {id: row.ID})
-CREATE (p)-[:HAD_ENCOUNTER {date: date(row.DATE)}]->(e);
+CREATE (p)-[:HAD_ENCOUNTER]->(e);
 
 // Create Encounter-Reason relationships
 LOAD CSV WITH HEADERS FROM 'file:///sampled_encounters.csv' AS row
@@ -562,12 +508,6 @@ WITH row WHERE row.REASONCODE IS NOT NULL AND row.REASONCODE <> ''
 MATCH (e:Encounter {id: row.ID})
 MATCH (r:Reason {code: row.REASONCODE})
 CREATE (e)-[:HAS_REASON]->(r);
-
-// Create Encounter-Condition relationships
-LOAD CSV WITH HEADERS FROM 'file:///sampled_conditions.csv' AS row
-MATCH (e:Encounter {id: row.ENCOUNTER})
-MATCH (c:Condition {code: row.CODE})
-CREATE (e)-[:DIAGNOSED]->(c);
 ```
 
 ### 6. Load Medications
@@ -578,14 +518,13 @@ LOAD CSV WITH HEADERS FROM 'file:///sampled_medications.csv' AS row
 MERGE (m:Medication {code: row.CODE})
 ON CREATE SET m.description = row.DESCRIPTION;
 
-// Create Patient-Medication relationships
+// Create Encounter-Medication relationships (NO patient relationships)
 LOAD CSV WITH HEADERS FROM 'file:///sampled_medications.csv' AS row
-MATCH (p:Patient {id: row.PATIENT})
+MATCH (e:Encounter {id: row.ENCOUNTER})
 MATCH (m:Medication {code: row.CODE})
-CREATE (p)-[:PRESCRIBED {
+CREATE (e)-[:PRESCRIBED_MEDICATION {
   startDate: date(row.START),
   stopDate: CASE WHEN row.STOP IS NOT NULL AND row.STOP <> '' THEN date(row.STOP) ELSE null END,
-  prescribedAt: row.ENCOUNTER,
   reasonCode: row.REASONCODE
 }]->(m);
 
@@ -595,12 +534,6 @@ WITH row WHERE row.REASONCODE IS NOT NULL AND row.REASONCODE <> ''
 MATCH (m:Medication {code: row.CODE})
 MATCH (c:Condition {code: toInteger(toFloat(row.REASONCODE))})
 MERGE (m)-[:TREATS]->(c);
-
-// Create Encounter-Medication relationships
-LOAD CSV WITH HEADERS FROM 'file:///sampled_medications.csv' AS row
-MATCH (e:Encounter {id: row.ENCOUNTER})
-MATCH (m:Medication {code: row.CODE})
-CREATE (e)-[:PRESCRIBED_MEDICATION]->(m);
 ```
 
 ### 7. Load Procedures
@@ -611,22 +544,15 @@ LOAD CSV WITH HEADERS FROM 'file:///sampled_procedures.csv' AS row
 MERGE (proc:Procedure {code: row.CODE})
 ON CREATE SET proc.description = row.DESCRIPTION;
 
-// Create Patient-Procedure relationships
-LOAD CSV WITH HEADERS FROM 'file:///sampled_procedures.csv' AS row
-MATCH (p:Patient {id: row.PATIENT})
-MATCH (proc:Procedure {code: row.CODE})
-CREATE (p)-[:UNDERWENT {
-  date: date(row.DATE),
-  encounterId: row.ENCOUNTER,
-  reasonCode: row.REASONCODE,
-  reasonDescription: row.REASONDESCRIPTION
-}]->(proc);
-
-// Create Encounter-Procedure relationships
+// Create Encounter-Procedure relationships (NO patient relationships)
 LOAD CSV WITH HEADERS FROM 'file:///sampled_procedures.csv' AS row
 MATCH (e:Encounter {id: row.ENCOUNTER})
 MATCH (proc:Procedure {code: row.CODE})
-CREATE (e)-[:PERFORMED]->(proc);
+CREATE (e)-[:PERFORMED {
+  date: date(row.DATE),
+  reasonCode: row.REASONCODE,
+  reasonDescription: row.REASONDESCRIPTION
+}]->(proc);
 ```
 
 ### 8. Load Immunizations
@@ -637,21 +563,13 @@ LOAD CSV WITH HEADERS FROM 'file:///sampled_immunizations.csv' AS row
 MERGE (i:Immunization {code: row.CODE})
 ON CREATE SET i.description = row.DESCRIPTION;
 
-// Create Patient-Immunization relationships
-LOAD CSV WITH HEADERS FROM 'file:///sampled_immunizations.csv' AS row
-MATCH (p:Patient {id: row.PATIENT})
-MATCH (i:Immunization {code: row.CODE})
-CREATE (p)-[:RECEIVED {
-  date: date(row.DATE),
-  encounterId: row.ENCOUNTER
-}]->(i);
-
-
-// Create Encounter-Immunization relationships
+// Create Encounter-Immunization relationships (NO patient relationships)
 LOAD CSV WITH HEADERS FROM 'file:///sampled_immunizations.csv' AS row
 MATCH (e:Encounter {id: row.ENCOUNTER})
 MATCH (i:Immunization {code: row.CODE})
-CREATE (e)-[:ADMINISTERED]->(i);
+CREATE (e)-[:ADMINISTERED {
+  date: date(row.DATE)
+}]->(i);
 ```
 
 ### 9. Load Observations
@@ -662,97 +580,45 @@ LOAD CSV WITH HEADERS FROM 'file:///sampled_observations.csv' AS row
 MERGE (o:Observation {code: row.CODE})
 ON CREATE SET o.description = row.DESCRIPTION;
 
-// Create Patient-Observation relationships
-LOAD CSV WITH HEADERS FROM 'file:///sampled_observations.csv' AS row
-MATCH (p:Patient {id: row.PATIENT})
-MATCH (o:Observation {code: row.CODE})
-CREATE (p)-[:HAD_OBSERVATION {
-  date: date(row.DATE),
-  encounterId: row.ENCOUNTER,
-  value: row.VALUE,
-  units: row.UNITS
-}]->(o);
-
-
-// Create Encounter-Observation relationships
+// Create Encounter-Observation relationships (NO patient relationships)
 LOAD CSV WITH HEADERS FROM 'file:///sampled_observations.csv' AS row
 MATCH (e:Encounter {id: row.ENCOUNTER})
 MATCH (o:Observation {code: row.CODE})
-CREATE (e)-[:RECORDED]->(o);
+CREATE (e)-[:RECORDED {
+  date: date(row.DATE),
+  value: row.VALUE,
+  units: row.UNITS
+}]->(o);
 ```
 
 ### 10. Load Careplans
 
 ```cypher
-// Create Careplan catalog nodes
-LOAD CSV WITH HEADERS FROM 'file:///sampled_careplans.csv' AS row
-MERGE (cp:Careplan {code: row.CODE})
-ON CREATE SET cp.description = row.DESCRIPTION;
+// Step 1: Create unique Reason nodes (catalog entities)
+LOAD CSV WITH HEADERS FROM 'file:///sampled_data/sampled_careplans.csv' AS row
+WITH row WHERE row.REASONCODE IS NOT NULL
+MERGE (r:Reason {code: row.REASONCODE})
+ON CREATE SET r.description = row.REASONDESCRIPTION;
+// Step 2: Create CarePlan nodes with properties
+LOAD CSV WITH HEADERS FROM 'file:///sampled_data/sampled_careplans.csv' AS row
+MERGE (cp:Careplan {id: row.ID})
+ON CREATE SET
+  cp.code = row.CODE,
+  cp.description = row.DESCRIPTION,
+  cp.start = date(row.START),
+  cp.stop = CASE WHEN row.STOP IS NOT NULL THEN date(row.STOP) ELSE null END;
 
-// Create Patient-Careplan relationships
-LOAD CSV WITH HEADERS FROM 'file:///sampled_careplans.csv' AS row
-MATCH (p:Patient {id: row.PATIENT})
-MATCH (cp:Careplan {code: row.CODE})
-CREATE (p)-[:ENROLLED_IN {
-  id: row.ID,
-  startDate: date(row.START),
-  stopDate: CASE WHEN row.STOP IS NOT NULL AND row.STOP <> '' THEN date(row.STOP) ELSE null END,
-  encounterId: row.ENCOUNTER,
-  reasonCode: row.REASONCODE,
-  reasonDescription: row.REASONDESCRIPTION
-}]->(cp);
+// Step 3: Create relationships between CarePlan and Encounter
+LOAD CSV WITH HEADERS FROM 'file:///sampled_data/sampled_careplans.csv' AS row
+MATCH (cp:Careplan {id: row.ID})
+MATCH (e:Encounter {id: row.ENCOUNTER})
+MERGE (e)-[:HAS_CAREPLAN]->(cp);
 
+// Step 4: Create relationships between CarePlan and Reason
+LOAD CSV WITH HEADERS FROM 'file:///sampled_data/sampled_careplans.csv' AS row
+WHERE row.REASONCODE IS NOT NULL
+MATCH (cp:Careplan {id: row.ID})
+MATCH (r:Reason {code: row.REASONCODE})
+MERGE (cp)-[:FOR_REASON]->(r);
 
 ```
-
----
-
-## 🔍 Useful Queries After Loading
-
-### Check Node Counts
-```cypher
-MATCH (n) RETURN labels(n)[0] AS NodeType, count(n) AS Count
-ORDER BY Count DESC;
-```
-
-### Check Relationship Counts
-```cypher
-MATCH ()-[r]->() RETURN type(r) AS RelationType, count(r) AS Count
-ORDER BY Count DESC;
-```
-
-### Get Complete Patient Graph
-```cypher
-MATCH path = (p:Patient {id: 'abf03ea9-2d1b-414e-8b07-5087c44bac8a'})-[*1..2]-()
-RETURN path
-LIMIT 100;
-```
-
-### Find Medication Treatment Chains
-```cypher
-MATCH (p:Patient)-[:PRESCRIBED]->(m:Medication)-[:TREATS]->(c:Condition)
-RETURN p.firstName, p.lastName, m.description, c.description
-LIMIT 20;
-```
-
----
-
-## 📋 Pre-Loading Checklist
-
-- [ ] Neo4j database is running
-- [ ] CSV files are in the Neo4j import directory (typically `/var/lib/neo4j/import/`)
-- [ ] All constraints are created
-- [ ] All indexes are created
-- [ ] CSV files have proper headers
-- [ ] Date formats are consistent (YYYY-MM-DD)
-- [ ] Backup plan in place
-
-
-
-**Ready to load data!** 🚀
-
-Next steps:
-1. Run the schema setup script
-2. Copy CSV files to Neo4j import directory
-3. Execute loading queries in order
-4. Verify with count queries
