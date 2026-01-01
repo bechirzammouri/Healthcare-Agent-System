@@ -1,0 +1,43 @@
+DATE,PATIENT,ENCOUNTER,CODE,DESCRIPTION,REASONCODE,REASONDESCRIPTION
+2012-04-08,85e7586b-8662-455d-80c2-5e785261ecb8,d32722d4-5cac-4613-b32f-2a7892f20d68,428191000124101,Documentation of current medications,,
+2012-12-16,85e7586b-8662-455d-80c2-5e785261ecb8,41c10176-677c-4eab-b0d2-e6fa60af475a,73761001,Colonoscopy,,
+2014-03-16,85e7586b-8662-455d-80c2-5e785261ecb8,e4458f1f-ba80-4fe5-8307-04a64c5c1a98,447365002,Insertion of biventricular implantable cardioverter defibrillator,,
+2014-03-16,85e7586b-8662-455d-80c2-5e785261ecb8,e4458f1f-ba80-4fe5-8307-04a64c5c1a98,18286008,Catheter ablation of tissue of heart,,
+2010-09-03,45902ee2-2689-4f8f-a2f7-fc4f30485e9a,850f9489-fec3-4fa0-ab59-c3b360ffe3a4,428191000124101,Documentation of current medications,,
+2011-10-12,45902ee2-2689-4f8f-a2f7-fc4f30485e9a,7df82080-9a02-4303-a758-13732f289efd,428191000124101,Documentation of current medications,,
+2012-11-02,45902ee2-2689-4f8f-a2f7-fc4f30485e9a,28240e08-3020-4640-b252-b79913e70171,428191000124101,Documentation of current medications,,
+2012-06-26,74ef42aa-e135-4d99-9450-4ac9dafd2d0b,763c0b28-cfde-4d42-a741-265018f20c4a,399208008,Plain chest X-ray (procedure),162573006.0,Suspected lung cancer (situation)
+2012-07-01,74ef42aa-e135-4d99-9450-4ac9dafd2d0b,8007c519-f451-4394-b592-6097db8e1477,418891003,Computed tomography of chest and abdomen,162573006.0,Suspected lung cancer (situation)
+2012-07-04,74ef42aa-e135-4d99-9450-4ac9dafd2d0b,f40514ac-5029-4bde-ba83-e3c2a707cd19,167995008,Sputum microscopy (procedure),162573006.0,Suspected lung cancer (situation)
+2012-07-05,74ef42aa-e135-4d99-9450-4ac9dafd2d0b,bd545721-d202-4893-b791-bee1baa9be07,698354004,Magnetic resonance imaging for measurement of brain volume (procedure),423121009.0,Non-small cell carcinoma of lung  TNM stage 4 (disorder)
+2012-07-05,74ef42aa-e135-4d99-9450-4ac9dafd2d0b,bd545721-d202-4893-b791-bee1baa9be07,703423002,Combined chemotherapy and radiation therapy (procedure),423121009.0,Non-small cell carcinoma of lung  TNM stage 4 (disorder)
+2012-08-03,74ef42aa-e135-4d99-9450-4ac9dafd2d0b,bd545721-d202-4893-b791-bee1baa9be07,703423002,Combined chemotherapy and radiation therapy (procedure),423121009.0,Non-small cell carcinoma of lung  TNM stage 4 (disorder)
+2012-09-01,74ef42aa-e135-4d99-9450-4ac9dafd2d0b,bd545721-d202-4893-b791-bee1baa9be07,703423002,Combined chemotherapy and radiation therapy (procedure),423121009.0,Non-small cell carcinoma of lung  TNM stage 4 (disorder)
+2012-10-01,74ef42aa-e135-4d99-9450-4ac9dafd2d0b,bd545721-d202-4893-b791-bee1baa9be07,703423002,Combined chemotherapy and radiation therapy (procedure),423121009.0,Non-small cell carcinoma of lung  TNM stage 4 (disorder)
+2012-10-31,74ef42aa-e135-4d99-9450-4ac9dafd2d0b,bd545721-d202-4893-b791-bee1baa9be07,703423002,Combined chemotherapy and radiation therapy (procedure),423121009.0,Non-small cell carcinoma of lung  TNM stage 4 (disorder)
+2012-12-02,74ef42aa-e135-4d99-9450-4ac9dafd2d0b,bd545721-d202-4893-b791-bee1baa9be07,703423002,Combined chemotherapy and radiation therapy (procedure),423121009.0,Non-small cell carcinoma of lung  TNM stage 4 (disorder)
+2013-01-01,74ef42aa-e135-4d99-9450-4ac9dafd2d0b,bd545721-d202-4893-b791-bee1baa9be07,703423002,Combined chemotherapy and radiation therapy (procedure),423121009.0,Non-small cell carcinoma of lung  TNM stage 4 (disorder)
+2013-02-04,74ef42aa-e135-4d99-9450-4ac9dafd2d0b,bd545721-d202-4893-b791-bee1baa9be07,703423002,Combined chemotherapy and radiation therapy (procedure),423121009.0,Non-small cell carcinoma of lung  TNM stage 4 (disorder)
+2011-03-20,26da0b41-6269-4b86-b59a-e9c384a44c31,3d09c933-e26b-4f3f-95da-06d584e3abb1,73761001,Colonoscopy,,
+2011-04-21,26da0b41-6269-4b86-b59a-e9c384a44c31,4aeaec06-0a20-4158-9eed-c3a10833c027,428191000124101,Documentation of current medications,,
+2013-12-30,26da0b41-6269-4b86-b59a-e9c384a44c31,db248665-7315-4a8b-bff2-6edbd290c718,428191000124101,Documentation of current medications,,
+2014-12-28,26da0b41-6269-4b86-b59a-e9c384a44c31,e8e72662-895a-4308-81eb-3e2bcaff0d93,428191000124101,Documentation of current medications,,
+2016-03-20,26da0b41-6269-4b86-b59a-e9c384a44c31,f9c23096-6c58-41d0-871a-04776af88cef,73761001,Colonoscopy,,
+2016-03-20,26da0b41-6269-4b86-b59a-e9c384a44c31,f9c23096-6c58-41d0-871a-04776af88cef,1015401000000102,Fecal occult blood test,68496003.0,Polyp of colon
+2016-03-20,26da0b41-6269-4b86-b59a-e9c384a44c31,f9c23096-6c58-41d0-871a-04776af88cef,274031008,Rectal polypectomy,68496003.0,Polyp of colon
+2017-03-06,26da0b41-6269-4b86-b59a-e9c384a44c31,bd7b9315-33cd-4832-ab74-ed08ce74922c,433112001,Percutaneous mechanical thrombectomy of portal vein using fluoroscopic guidance,,
+2011-08-10,2d55686e-54cd-4554-b4b7-dc48e586b83d,228beccd-ced3-4549-97ff-bf1615efc1ee,428191000124101,Documentation of current medications,,
+2013-06-23,2d55686e-54cd-4554-b4b7-dc48e586b83d,83d88594-d4f1-4de2-b8f9-8793d97aa279,428191000124101,Documentation of current medications,,
+2010-07-09,dce0e825-07c6-428a-adba-5fbca33871d8,99aaa50e-0802-4419-a9b0-8046066228df,274474001,Bone immobilization,16114001.0,Fracture of ankle
+2010-07-09,dce0e825-07c6-428a-adba-5fbca33871d8,99aaa50e-0802-4419-a9b0-8046066228df,312681000,Bone density scan (procedure),16114001.0,Fracture of ankle
+2011-10-16,dce0e825-07c6-428a-adba-5fbca33871d8,1dcf9f0d-222c-4b59-9fc4-b0f2b91cfc33,428191000124101,Documentation of current medications,,
+2013-01-01,dce0e825-07c6-428a-adba-5fbca33871d8,3e7e4d3e-643c-439c-bcd0-f7893ead4ff7,73761001,Colonoscopy,,
+2010-06-10,af81bf22-cd35-4329-a35e-c2ab9ff3409c,039cc404-185a-425c-a283-63585e18237d,46706006,Replacement of contraceptive intrauterine device,,
+2012-06-08,4d30e2c4-dc21-41d8-b778-d677beb9be4a,0204e1b9-1037-465a-abc6-5366bdd27ac1,428191000124101,Documentation of current medications,,
+2014-12-23,4d30e2c4-dc21-41d8-b778-d677beb9be4a,ea7ab055-e58f-49b5-a1f8-69eccf47ae9b,73761001,Colonoscopy,,
+2010-08-13,e95be51d-44e6-48c5-8668-459892a0f5eb,e381c458-2882-4373-bd92-66cb836cc156,127783003,Spirometry (procedure),87433001.0,Pulmonary emphysema (disorder)
+2010-08-13,e95be51d-44e6-48c5-8668-459892a0f5eb,e381c458-2882-4373-bd92-66cb836cc156,15081005,Pulmonary rehabilitation (regime/therapy),87433001.0,Pulmonary emphysema (disorder)
+2011-07-26,e95be51d-44e6-48c5-8668-459892a0f5eb,504e282d-d944-4498-b33f-1e1d6a574136,127783003,Spirometry (procedure),87433001.0,Pulmonary emphysema (disorder)
+2011-07-26,e95be51d-44e6-48c5-8668-459892a0f5eb,504e282d-d944-4498-b33f-1e1d6a574136,15081005,Pulmonary rehabilitation (regime/therapy),87433001.0,Pulmonary emphysema (disorder)
+2012-06-06,e95be51d-44e6-48c5-8668-459892a0f5eb,b9ed3fe4-4651-484a-b290-d5889a23bbf0,127783003,Spirometry (procedure),87433001.0,Pulmonary emphysema (disorder)
+2012-06-06,e95be51d-44e6-48c5-8668-459892a0f5eb,b9ed3fe4-4651-484a-b290-d5889a23bbf0,15081005,Pulmonary rehabilitation (regime/therapy),87433001.0,Pulmonary emphysema (disorder)
