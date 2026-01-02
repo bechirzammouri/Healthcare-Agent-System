@@ -48,9 +48,6 @@ GenAI-assesment/
 ├── test_agent_graphrag.py        # Agent + GraphRAG tests
 ├── test_neo4j_connection.py      # Neo4j connection test
 ├── test_llm_api.py               # LLM API test
-├── examples_graphrag.py          # GraphRAG usage examples
-├── agent_architecture_plan.md    # Architecture planning document
-├── assesment_description.md      # Assessment requirements
 └── README.md                     # This file
 ```
 
@@ -133,16 +130,6 @@ print(run_agent("How many patients are in the database?"))
 "How many patients have diabetes?"
 ```
 
-## 🐛 Troubleshooting
-
-**Missing modules:** `python -m pip install -r requirements.txt`
-
-**Neo4j error:** Check Neo4j is running on `bolt://localhost:7687`
-
-**API key error:** Verify `GROQ_API_KEY` in `.env` is correct
-
-**No .env file:** `cp .env.example .env` then edit it
-
 ## ✅ Tasks Completed
 
 - [x] Task 1: Agentic AI with LangGraph + 5 custom tools
@@ -164,25 +151,6 @@ This project implements a comprehensive **GraphRAG (Graph Retrieval-Augmented Ge
 
 The system will work with basic graph queries and analytics, but semantic/similarity-based queries will have limited effectiveness until proper embeddings are generated.
 
-### ⚡ Implementation Options
-
-**Option 1: Hash-Based Embeddings (Current State - No Semantics)**
-- No API key required
-- Lightweight and fast
-- ⚠️ **No semantic understanding** - similarity search won't work meaningfully
-- Good for testing infrastructure only
-
-**Option 2: Sentence-Transformers (Recommended for Semantic Search)**
-- No API key required
-- Local model (~100MB download)
-- ✅ **True semantic understanding**
-- Run: `python setup_graphrag.py`
-
-**Option 3: OpenAI Embeddings (Best Quality)**
-- Requires OpenAI API key
-- ~$0.04 one-time cost for full dataset
-- ✅ **Highest quality semantic search**
-- Add `OPENAI_API_KEY` to `.env`, then run: `python setup_graphrag.py`
 
 ### Vector Similarity Search
 - Infrastructure for semantic search using embeddings
@@ -220,14 +188,8 @@ python setup_graphrag.py
 python test_graphrag.py
 ```
 
-**See detailed guides**:
-- [GRAPHRAG_LIGHTWEIGHT.md](GRAPHRAG_LIGHTWEIGHT.md) - Lightweight setup (no PyTorch)
-- [GRAPHRAG_IMPLEMENTATION.md](GRAPHRAG_IMPLEMENTATION.md) - Complete documentation
-- [GRAPHRAG_QUICK_REFERENCE.md](GRAPHRAG_QUICK_REFERENCE.md) - Quick reference
-
 ## 📚 More Info
 
 - **Graph Schema**: `dataset/NEO4J_ARCHITECTURE.md`
 - **Agent Details**: `AGENT_README.md`
-- **GraphRAG Guide**: `GRAPHRAG_IMPLEMENTATION.md`
 
