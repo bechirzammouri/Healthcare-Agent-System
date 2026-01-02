@@ -1,7 +1,5 @@
 .venv
 /retured_pdf/*
-assesment_description.md
-instructions.md
 .env
-agent_architecture_plan.md
 GRAPH*
+*.pyc
