@@ -68,8 +68,21 @@ def main():
         {
             "query": "What medications are used to treat hypertension?",
             "description": "Medication info (Neo4j Tool)"
+        },
+        
+        # Complex queries requiring multiple tools or reasoning
+        {
+            "query": "How many patients have encounters in the database?",
+            "description": "Multi-step reasoning"
         }
     ]
+
+    test_custom_queries = [
+        {
+            "query": "How many encounters does each patient have? Show top 5 patients.",
+            "description": "Custom Cypher generation (Neo4j Tool)"
+        }
+        ]
     
     passed = 0
     failed = 0

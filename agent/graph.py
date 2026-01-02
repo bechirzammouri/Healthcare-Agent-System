@@ -10,6 +10,9 @@ from langgraph.prebuilt import ToolNode
 from agent.state import AgentState
 from agent.tools.neo4j_tool import Neo4jQueryTool
 from agent.tools.analytics_tool import GraphAnalyticsTool
+from agent.tools.vector_search_tool import VectorSearchTool
+from agent.tools.graph_traversal_tool import GraphTraversalTool
+from agent.tools.graphrag_tool import GraphRAGTool
 import config
 
 
@@ -26,7 +29,13 @@ def get_llm():
         raise ValueError(f"Unsupported LLM provider: {config.LLM_PROVIDER}") from e
 
 
-tools = [Neo4jQueryTool(), GraphAnalyticsTool()]
+tools = [
+    Neo4jQueryTool(), 
+    GraphAnalyticsTool(),
+    VectorSearchTool(),
+    GraphTraversalTool(),
+    GraphRAGTool()
+]
 tool_node = ToolNode(tools)
  
 llm = get_llm()
@@ -55,9 +64,15 @@ def call_model(state: AgentState):
     1. Query patient medical histories using the neo4j_query tool
     2. Look up information about conditions and medications
     3. Compute statistics and analytics using the graph_analytics tool
+    4. Perform semantic search using vector_similarity_search (find medically similar concepts)
+    5. Execute complex graph traversals using graph_traversal (multi-hop relationships, patterns)
+    6. Use GraphRAG hybrid retrieval with graphrag_retrieval (combines semantic + graph traversal)
     
     When answering questions:
     - Use the appropriate tool(s) to gather information from the graph
+    - For semantic queries ("similar to", "related to"), use vector_similarity_search
+    - For complex relationship queries, use graph_traversal or graphrag_retrieval
+    - For comprehensive analysis, combine multiple tools
     - Provide clear, accurate answers based on the data
     - If you don't have enough information, ask clarifying questions
     - Format your responses in a user-friendly way
@@ -68,12 +83,21 @@ def call_model(state: AgentState):
     - condition_lookup: Find patients with specific conditions
     - encounter_details: Details about specific medical encounters
     
-    Available analytics types:
-    - node_counts: Count of all node types
-    - top_conditions: Most common conditions
-    - top_medications: Most prescribed medications
-    - patient_demographics: Patient age/gender distribution
-    - encounter_stats: Encounter statistics
+    Vector similarity search supports:
+    - condition, medication, procedure, observation, encounter, careplan nodes
+    - Natural language queries for semantic matching
+    
+    Graph traversal types:
+    - patient_journey: Complete medical timeline
+    - condition_treatment_path: Treatment patterns for conditions
+    - medication_interactions: Co-prescribed medications
+    - similar_patient_cohort: Patients with similar histories
+    - temporal_patterns: Sequential medical events
+    
+    GraphRAG retrieval modes:
+    - semantic_then_traverse: Find similar entities, then explore graph
+    - traverse_then_semantic: Graph exploration with semantic ranking
+    - hybrid_combined: Simultaneous semantic + graph approach
     """)
     
     all_messages = [system_message] + list(messages)

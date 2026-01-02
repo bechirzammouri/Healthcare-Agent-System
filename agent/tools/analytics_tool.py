@@ -19,13 +19,12 @@ class GraphAnalyticsTool(BaseTool):
     
     name: str = "graph_analytics"
     description: str = """
-    Compute statistics and analytics from the healthcare knowledge graph.
-    Available analysis types:
-    - node_counts: Count of each node type in the graph
-    - top_conditions: Most common medical conditions
-    - top_medications: Most frequently prescribed medications
-    - patient_demographics: Age and gender distribution
-    - encounter_stats: Encounter frequency and types
+    Compute aggregate statistics and counts from the healthcare graph.
+    
+    Use for: Database statistics ("How many patients?"), rankings ("top 10 conditions"), demographics.
+    Don't use for: Specific entities, semantic search, complex analytical queries about specific treatments.
+    
+    Analysis types: node_counts, top_conditions, top_medications, patient_demographics, encounter_stats.
     """
     args_schema: Type[BaseModel] = AnalyticsInput
     

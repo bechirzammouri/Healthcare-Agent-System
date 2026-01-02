@@ -24,15 +24,13 @@ class Neo4jQueryTool(BaseTool):
     
     name: str = "neo4j_query"
     description: str = """
-    Query the healthcare knowledge graph using predefined query types or custom Cypher.
-    Available query types:
-    - patient_history: Get complete medical history for a patient. Can omit patient_id to get random patient.
-    - medication_info: Get information about medications. Use medication_code for partial name match (e.g., 'insulin').
-    - condition_lookup: Find patients with specific conditions. Use condition_code for keyword search (e.g., 'diabetes').
-    - encounter_details: Get details about a specific medical encounter (requires encounter_id).
-    - custom: Execute a custom Cypher query (requires custom_cypher).
+    Direct entity lookups using predefined queries or custom Cypher.
     
-    Note: Graph uses HAD_ENCOUNTER, DIAGNOSED, PRESCRIBED_MEDICATION relationships.
+    Use for: Specific ID lookups ("patient P123's history", "encounter E456"), exact matches.
+    Don't use for: Semantic search, complex multi-entity queries, fuzzy matching.
+    
+    Query types: patient_history, medication_info, condition_lookup, encounter_details, custom.
+    Note: Can omit patient_id for random patient example.
     """
     args_schema: Type[BaseModel] = Neo4jQueryInput
     

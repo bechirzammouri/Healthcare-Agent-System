@@ -1,9 +1,11 @@
 langgraph
 langchain-groq
+langchain-community
+langchain-openai
+sentence-transformers
 dotenv
 neo4j
 pandas
-langgraph
 fastapi
 uvicorn
 python-dotenv
