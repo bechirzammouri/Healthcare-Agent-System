@@ -4,3 +4,6 @@ dotenv
 neo4j
 pandas
 langgraph
+fastapi
+uvicorn
+python-dotenv
