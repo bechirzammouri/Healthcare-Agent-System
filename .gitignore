@@ -1,4 +1,5 @@
 .venv
-returned_pdf
+/retured_pdf/*
 assesment_description.md
 instructions.md
+.env

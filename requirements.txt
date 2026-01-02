@@ -1,2 +1,6 @@
 langgraph
 langchain-groq
+dotenv
+neo4j
+pandas
+langgraph
