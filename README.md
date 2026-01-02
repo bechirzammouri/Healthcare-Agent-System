@@ -191,5 +191,5 @@ python test_graphrag.py
 ## 📚 More Info
 
 - **Graph Schema**: `dataset/NEO4J_ARCHITECTURE.md`
-- **Agent Details**: `AGENT_README.md`
+- **Agent Details**: `agent/README.md`
 
