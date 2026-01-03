@@ -84,7 +84,7 @@ NEO4J_PASSWORD=your_neo4j_password
 ### 4. Run the Server
 
 ```bash
-python -m uvicorn api.main:app --reload
+python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Server runs at: http://localhost:8000

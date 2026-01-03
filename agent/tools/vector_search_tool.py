@@ -46,7 +46,7 @@ def get_embeddings():
 class VectorSearchInput(BaseModel):
     """Input schema for vector search tool"""
     query_text: str = Field(description="Natural language description to search for (e.g., 'diabetes', 'heart disease', 'pain medication')")
-    node_type: str = Field(description="Type of node to search: 'condition', 'medication', 'procedure', 'observation'")
+    node_type: str = Field(description="Type of node to search: 'condition', 'medication', 'procedure', 'observation', 'encounter', 'careplan'")
     limit: int = Field(default=5, description="Maximum number of similar results to return")
     similarity_threshold: float = Field(default=0.7, description="Minimum similarity score (0-1, higher is more similar)")
 
@@ -61,7 +61,7 @@ class VectorSearchTool(BaseTool):
     Use for: Fuzzy concept matching ("conditions like diabetes", "pain relievers").
     Don't use for: Specific IDs, complex multi-entity queries (use graphrag_retrieval), statistics.
     
-    Node types: 'condition', 'medication', 'procedure', 'observation'.
+    Node types: 'condition', 'medication', 'procedure', 'observation', 'encounter', 'careplan'.
     Returns: Similar items with scores.
     """
     args_schema: Type[BaseModel] = VectorSearchInput
@@ -111,11 +111,13 @@ class VectorSearchTool(BaseTool):
             "condition": ("Condition", "condition_embedding_index"),
             "medication": ("Medication", "medication_embedding_index"),
             "procedure": ("Procedure", "procedure_embedding_index"),
-            "observation": ("Observation", "observation_embedding_index")
+            "observation": ("Observation", "observation_embedding_index"),
+            "encounter": ("Encounter", "encounter_embedding_index"),
+            "careplan": ("CarePlan", "careplan_embedding_index")
         }
         
         if node_type.lower() not in node_mappings:
-            return f"Error: Unknown node type '{node_type}'. Use: condition, medication, procedure, or observation"
+            return f"Error: Unknown node type '{node_type}'. Use: condition, medication, procedure, observation, encounter, or careplan"
         
         label, index_name = node_mappings[node_type.lower()]
         
