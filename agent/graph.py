@@ -49,12 +49,30 @@ def should_continue(state: AgentState) -> Literal["tools", "end"]:
     
     if not hasattr(last_message, "tool_calls") or not last_message.tool_calls:
         return "end"
+    
+    # Log which tool(s) the agent chose
+    print("\n" + "="*60)
+    print("🔧 AGENT TOOL SELECTION")
+    print("="*60)
+    for tool_call in last_message.tool_calls:
+        print(f"✓ Tool chosen: {tool_call['name']}")
+        print(f"  Arguments: {tool_call['args']}")
+    print("="*60 + "\n")
+    
     return "tools"
 
 
 def call_model(state: AgentState):
     """Call the LLM with the current state"""
     messages = state["messages"]
+    
+    # Log when agent is processing a new query
+    if len(messages) == 1 and isinstance(messages[0], HumanMessage):
+        print("\n" + "="*60)
+        print("💬 USER QUERY")
+        print("="*60)
+        print(f"Query: {messages[0].content}")
+        print("="*60 + "\n")
     
     # System message with instructions
     system_message = SystemMessage(content="""
