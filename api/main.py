@@ -3,15 +3,31 @@ FastAPI backend for the healthcare agent
 """
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from agent.graph import run_agent
 from neo4j import GraphDatabase
 import config
+import json
+
+
+class PrettyJSONResponse(JSONResponse):
+    """Custom JSON response with pretty formatting"""
+    def render(self, content) -> bytes:
+        return json.dumps(
+            content,
+            ensure_ascii=False,
+            allow_nan=False,
+            indent=2,
+            separators=(", ", ": "),
+        ).encode("utf-8")
+
 
 app = FastAPI(
     title="Healthcare Agent API",
     description="Agentic AI system for healthcare knowledge graph queries",
-    version="1.0.0"
+    version="1.0.0",
+    default_response_class=PrettyJSONResponse
 )
 
 # Add CORS middleware

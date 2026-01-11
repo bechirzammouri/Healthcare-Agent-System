@@ -74,7 +74,7 @@ class GraphTraversalTool(BaseTool):
                         WHERE c.code = $condition_code OR c.description CONTAINS $condition_code
                         MATCH (e:Encounter)-[:DIAGNOSED]->(c)
                         OPTIONAL MATCH (e)-[:PRESCRIBED_MEDICATION]->(m:Medication)
-                        OPTIONAL MATCH (e)-[:HAD_PROCEDURE]->(proc:Procedure)
+                        OPTIONAL MATCH (e)-[:PERFORMED]->(proc:Procedure)
                         WITH c, 
                              collect(DISTINCT {code: m.code, name: m.description}) as medications,
                              collect(DISTINCT {code: proc.code, name: proc.description}) as procedures
