@@ -18,15 +18,22 @@ import config
 
 def get_llm():
     """Get the configured LLM"""
-    try:
-        if config.LLM_PROVIDER == "groq":
-            return ChatGroq(
-                api_key=config.GROQ_API_KEY,
-                model_name=config.LLM_MODEL,
-                temperature=config.TEMPERATURE
+    if config.LLM_PROVIDER == "groq":
+        if not config.GROQ_API_KEY:
+            raise ValueError(
+                "GROQ_API_KEY is required when LLM_PROVIDER is set to 'groq'."
             )
-    except Exception as e:
-        raise ValueError(f"Unsupported LLM provider: {config.LLM_PROVIDER}") from e
+
+        return ChatGroq(
+            api_key=config.GROQ_API_KEY,
+            model_name=config.LLM_MODEL,
+            temperature=config.TEMPERATURE
+        )
+
+    raise ValueError(
+        f"Unsupported LLM provider: {config.LLM_PROVIDER}. "
+        "Supported providers: groq"
+    )
 
 
 tools = [
