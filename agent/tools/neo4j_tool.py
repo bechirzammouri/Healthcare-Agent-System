@@ -1,11 +1,19 @@
 """
 Neo4j Query Tool - Execute Cypher queries on the healthcare graph
 """
+import re
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 from typing import Optional, Type
 from neo4j import GraphDatabase
 import config
+
+# Neo4j Community Edition has no role-based access control, so this tool
+# must reject write/procedure keywords itself before running custom Cypher.
+_WRITE_KEYWORDS = re.compile(
+    r"\b(CREATE|MERGE|DELETE|REMOVE|SET|DROP|DETACH|CALL|LOAD\s+CSV)\b",
+    re.IGNORECASE,
+)
 
 
 class Neo4jQueryInput(BaseModel):
@@ -115,7 +123,13 @@ class Neo4jQueryTool(BaseTool):
                 # Select and execute query
                 if query_type not in queries:
                     return f"Error: Unknown query type '{query_type}'"
-                
+
+                if query_type == "custom":
+                    if not custom_cypher:
+                        return "Error: custom_cypher is required for query_type 'custom'"
+                    if _WRITE_KEYWORDS.search(custom_cypher):
+                        return "Error: custom_cypher contains a disallowed write or procedure-call keyword. This tool is read-only."
+
                 cypher_query = queries[query_type]
                 params = {
                     "patient_id": patient_id,

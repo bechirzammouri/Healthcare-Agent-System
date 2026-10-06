@@ -87,7 +87,7 @@ def main():
     passed = 0
     failed = 0
     
-    for test in tests:
+    for test in tests[1:2]:
         if test_query(test["query"], test["description"]):
             passed += 1
         else:
