@@ -2,4 +2,5 @@
 /retured_pdf/*
 .env
 GRAPH*
-*.pyc
+*/.pyc
+__pycache__/
