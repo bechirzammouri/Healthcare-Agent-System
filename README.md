@@ -51,6 +51,46 @@ GenAI-assesment/
 └── README.md                     # This file
 ```
 
+## 🏗️ Infrastructure & Protocols
+
+```
+┌──────────┐   HTTP/REST (port 8000)   ┌────────────────────┐
+│  Client  │ ────────────────────────▶ │  FastAPI (api/main) │
+└──────────┘                           └─────────┬──────────┘
+                                                  │
+                                                  │ in-process call
+                                                  ▼
+                                   ┌──────────────────────────┐
+                                   │  LangGraph Agent          │
+                                   │  (agent/graph.py)         │
+                                   └──────┬─────────────┬──────┘
+                                          │             │
+                         HTTPS (REST)     │             │  Bolt protocol, TLS
+                         api.groq.com     │             │  (bolt+ssc://, port 7687)
+                                          ▼             ▼
+                                ┌────────────────┐   ┌───────────────────────┐
+                                │  LLM Provider   │   │  Neo4j (Docker        │
+                                │  (Groq/OpenAI)   │   │  container,           │
+                                └────────────────┘   │  neo4j-healthcare)     │
+                                                      └───────────────────────┘
+```
+
+### Protocols in use
+
+| Hop | Protocol | Notes |
+|---|---|---|
+| Client → FastAPI | HTTP/REST (port `8000`) | JSON request/response, CORS currently open (`allow_origins=["*"]`) for local dev |
+| Agent → LLM provider | HTTPS/REST | Outbound call to Groq or OpenAI's API; credentials via `GROQ_API_KEY`/`OPENAI_API_KEY` in `.env` (never committed — `.env` is gitignored) |
+| Agent → Neo4j | **Bolt over TLS** (`bolt+ssc://localhost:7687`) | Neo4j's native binary driver protocol, encrypted with a self-signed certificate (see `neo4j+ssc`/`bolt+ssc` scheme — accepts a self-signed cert but skips CA/hostname verification, appropriate for a local dev cert) |
+| Neo4j Browser (manual/admin use) | HTTP (port `7474`) | Unencrypted; used only for local browser-based inspection via `http://localhost:7474/`, not used by the application code |
+
+### Neo4j: containerization & security
+
+- Runs as a Docker container (`neo4j-healthcare`, image `neo4j:2025.10.1`, **Community Edition**), with data persisted in two named Docker volumes (`neo4j-data`, `neo4j-logs`) independent of the container's lifecycle.
+- **Bolt connector requires TLS**: the container has `server.bolt.tls_level=REQUIRED` and an SSL policy (`dbms.ssl.policy.bolt.*`) pointing at a self-signed cert bind-mounted from the host into `/var/lib/neo4j/certificates/bolt`. Plain unencrypted `bolt://` connections are rejected by the server.
+- **No native RBAC in Community Edition**: role-based access control (`CREATE USER`/`CREATE ROLE`) is an Enterprise-only feature, so there is only a single DB user. To still enforce read-only access, [`agent/tools/neo4j_tool.py`](agent/tools/neo4j_tool.py) validates any `custom_cypher` input against a write-keyword blocklist (`CREATE`, `MERGE`, `DELETE`, `REMOVE`, `SET`, `DROP`, `DETACH`, `CALL`, `LOAD CSV`) before it ever reaches `session.run()` — this is an application-level guard standing in for DB-level enforcement.
+- All four predefined query templates (`patient_history`, `medication_info`, `condition_lookup`, `encounter_details`) are read-only `MATCH`/`RETURN` Cypher by construction.
+
 ## 🚀 Quick Start
 
 ### 1. Create Python Virtual Environment
