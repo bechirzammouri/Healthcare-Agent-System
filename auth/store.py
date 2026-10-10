@@ -67,8 +67,17 @@ def get_user(username: str) -> Optional[UserInDB]:
     )
 
 
+class UserAlreadyExistsError(ValueError):
+    """Raised when attempting to create a user that already exists"""
+
+
 def create_user(username: str, password_hash: str, role: str) -> User:
-    """Insert a new user. Raises ValueError if the username already exists."""
+    """
+    Insert a new user.
+
+    password_hash must be a bcrypt hash, not plaintext. Raises
+    UserAlreadyExistsError (a ValueError) if the username is taken.
+    """
     init_db()
     created_at = datetime.now(timezone.utc).isoformat()
     try:
@@ -79,7 +88,9 @@ def create_user(username: str, password_hash: str, role: str) -> User:
                 (username, password_hash, role, created_at),
             )
     except sqlite3.IntegrityError as exc:
-        raise ValueError(f"User '{username}' already exists") from exc
+        if "UNIQUE constraint failed" in str(exc):
+            raise UserAlreadyExistsError(f"User '{username}' already exists") from exc
+        raise
 
     return User(username=username, role=role, disabled=False)
 

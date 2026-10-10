@@ -17,9 +17,10 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from auth import store  # noqa: E402
+from auth.models import Role  # noqa: E402
 from auth.security import hash_password  # noqa: E402
 
-VALID_ROLES = ["doctor", "nurse", "admin"]
+VALID_ROLES = [role.value for role in Role]
 MIN_PASSWORD_LENGTH = 8
 
 

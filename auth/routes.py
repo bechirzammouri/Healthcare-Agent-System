@@ -4,9 +4,11 @@ Authentication routes (OAuth2 password flow)
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
+from auth import store
 from auth.dependencies import authenticate_user, get_current_user
-from auth.models import Token, User
-from auth.security import create_access_token
+from auth.models import DEFAULT_SIGNUP_ROLE, CreateUserRequest, Token, User
+from auth.security import create_access_token, hash_password
+from auth.store import UserAlreadyExistsError
 
 router = APIRouter(tags=["authentication"])
 
@@ -30,6 +32,29 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()) -> Token:
 
     token, expires_in = create_access_token(username=user.username, role=user.role)
     return Token(access_token=token, token_type="bearer", expires_in=expires_in)
+
+
+@router.post("/signup", response_model=User, status_code=status.HTTP_201_CREATED)
+async def signup(payload: CreateUserRequest) -> User:
+    """
+    Create a new account with the default (lowest-privilege) role.
+
+    The role is chosen by the server, never by the caller; elevated roles are
+    granted out-of-band with scripts/create_user.py.
+    """
+    try:
+        password_hash = hash_password(payload.password)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+    try:
+        return store.create_user(
+            payload.username, password_hash, DEFAULT_SIGNUP_ROLE.value
+        )
+    except UserAlreadyExistsError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="User already exists"
+        )
 
 
 @router.get("/me", response_model=User)
