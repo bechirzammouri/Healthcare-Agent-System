@@ -1,12 +1,15 @@
 """
 FastAPI backend for the healthcare agent
 """
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from agent.graph import run_agent
 from neo4j import GraphDatabase
+from auth import routes as auth_routes
+from auth.dependencies import require_role
+from auth.models import User
 import config
 import json
 
@@ -31,13 +34,18 @@ app = FastAPI(
 )
 
 # Add CORS middleware
+# Origins are restricted to config.ALLOWED_ORIGINS (set via ALLOWED_ORIGINS in
+# .env). A wildcard is not used here: it is invalid alongside allow_credentials
+# and would let any site call the API with a user's token.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=config.ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
+app.include_router(auth_routes.router)
 
 
 class QueryRequest(BaseModel):
@@ -57,19 +65,26 @@ def root():
     return {
         "message": "Healthcare Agent API",
         "endpoints": {
-            "/ask": "POST - Ask a question to the agent",
-            "/graph-info": "GET - Get graph metadata"
+            "/token": "POST - Obtain an access token (username/password)",
+            "/me": "GET - Current authenticated user",
+            "/ask": "POST - Ask a question to the agent (requires authentication)",
+            "/graph-info": "GET - Get graph metadata (requires authentication)"
         }
     }
 
 
 @app.post("/ask", response_model=QueryResponse)
-async def ask_question(request: QueryRequest):
+async def ask_question(
+    request: QueryRequest,
+    current_user: User = Depends(require_role("doctor")),
+):
     """
     Ask a question to the healthcare agent
-    
+
     The agent will use available tools to query the Neo4j knowledge graph
     and provide an informed answer.
+
+    Requires a bearer token belonging to a user with the 'doctor' role.
     """
     try:
         answer = run_agent(request.query)
@@ -79,11 +94,13 @@ async def ask_question(request: QueryRequest):
 
 
 @app.get("/graph-info")
-async def get_graph_info():
+async def get_graph_info(current_user: User = Depends(require_role("doctor"))):
     """
     Get metadata about the knowledge graph
-    
-    Returns node counts, relationship counts, and basic statistics
+
+    Returns node counts, relationship counts, and basic statistics.
+
+    Requires a bearer token belonging to a user with the 'doctor' role.
     """
     driver = GraphDatabase.driver(
         config.NEO4J_URI,
@@ -136,6 +153,3 @@ async def health_check():
     return {"status": "healthy"}
 
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)

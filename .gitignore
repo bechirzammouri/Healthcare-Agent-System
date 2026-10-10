@@ -4,3 +4,4 @@
 GRAPH*
 */.pyc
 __pycache__/
+auth.db

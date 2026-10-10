@@ -22,6 +22,16 @@ GenAI-assesment/
 ├── api/                           # FastAPI backend
 │   └── main.py                   # REST API endpoints
 │
+├── auth/                          # Authentication & authorization
+│   ├── models.py                 # Token / User pydantic models
+│   ├── security.py               # bcrypt hashing, JWT issue & verify
+│   ├── store.py                  # SQLite user store (kept out of Neo4j)
+│   ├── dependencies.py           # get_current_user, require_role
+│   └── routes.py                 # POST /token, GET /me
+│
+├── scripts/
+│   └── create_user.py            # Interactive user-account bootstrap
+│
 ├── dataset/                       # Data & Neo4j documentation
 │   ├── NEO4J_ARCHITECTURE.md     # Graph schema documentation
 │   ├── DATA Overview.md          # Dataset overview
@@ -79,10 +89,42 @@ GenAI-assesment/
 
 | Hop | Protocol | Notes |
 |---|---|---|
-| Client → FastAPI | HTTP/REST (port `8000`) | JSON request/response, CORS currently open (`allow_origins=["*"]`) for local dev |
+| Client → FastAPI | HTTP/REST (port `8000`) | JSON request/response; **OAuth2 password flow + JWT bearer tokens**; CORS restricted to `ALLOWED_ORIGINS` |
 | Agent → LLM provider | HTTPS/REST | Outbound call to Groq or OpenAI's API; credentials via `GROQ_API_KEY`/`OPENAI_API_KEY` in `.env` (never committed — `.env` is gitignored) |
 | Agent → Neo4j | **Bolt over TLS** (`bolt+ssc://localhost:7687`) | Neo4j's native binary driver protocol, encrypted with a self-signed certificate (see `neo4j+ssc`/`bolt+ssc` scheme — accepts a self-signed cert but skips CA/hostname verification, appropriate for a local dev cert) |
 | Neo4j Browser (manual/admin use) | HTTP (port `7474`) | Unencrypted; used only for local browser-based inspection via `http://localhost:7474/`, not used by the application code |
+
+### API authentication & authorization
+
+The API uses the **OAuth2 password grant** with self-issued **JWT** bearer tokens. FastAPI provides the scaffolding (`OAuth2PasswordBearer`, `OAuth2PasswordRequestForm`); the credential verification, hashing and token logic live in [`auth/`](auth/).
+
+```
+POST /token  (username + password, form-encoded)
+      │
+      ▼  verify bcrypt hash
+   JWT  { sub: <username>, role: <role>, iat, exp }   signed HS256
+      │
+      ▼  Authorization: Bearer <token>
+  protected routes  →  require_role("doctor")  →  200 / 401 / 403
+```
+
+| Concern | Implementation |
+|---|---|
+| Password storage | **bcrypt** hashes (per-password salt). Plaintext passwords are never stored, logged, or accepted as CLI arguments |
+| Credential store | **SQLite** (`auth.db`, gitignored) — *deliberately not Neo4j*, see note below |
+| Token signing | HS256 with `JWT_SECRET_KEY` from `.env`; the app refuses to issue tokens if it is unset rather than falling back to a default |
+| Token lifetime | `ACCESS_TOKEN_EXPIRE_MINUTES` (default 60); expired tokens are rejected |
+| Authorization | `role` claim + `require_role(...)` dependency factory — adding `nurse`/`admin`/`patient` later is a one-argument change, not a redesign |
+| Revocation | Disabling an account invalidates its existing tokens on the next request (the user is re-checked on every call) |
+| User enumeration | Unknown usernames run a dummy hash comparison so response timing doesn't reveal which accounts exist |
+| CORS | Restricted to `ALLOWED_ORIGINS`; methods limited to `GET`/`POST`. No wildcard (invalid with `allow_credentials`, and unsafe once tokens exist) |
+
+> **Why credentials are not stored in Neo4j:** the agent can execute arbitrary *read-only* Cypher via its `custom_cypher` path. If accounts lived as `:User` nodes, a prompt-injected query such as `MATCH (u:User) RETURN u.password_hash` would succeed — the write-keyword guard blocks writes, not reads. Keeping the credential store in SQLite puts it physically out of reach of the Neo4j driver.
+
+**Public routes:** `/`, `/health`, `/token`
+**Protected routes:** `/ask`, `/graph-info` (role `doctor`), `/me` (any authenticated user)
+
+*Future extension:* because the API already consumes standard bearer tokens, swapping the self-issued token for an external **OIDC** provider (Keycloak, Auth0, Cognito) later only changes who issues the token — the route protection and role checks stay as they are.
 
 ### Neo4j: containerization & security
 
@@ -117,11 +159,22 @@ nano .env  # Edit with your API key
 ```bash
 GROQ_API_KEY=your_groq_api_key_here
 NEO4J_PASSWORD=your_neo4j_password
+JWT_SECRET_KEY=   # generate with: python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
 **Get free Groq API key:** https://console.groq.com/
 
-### 4. Run the Server
+### 4. Create a User Account
+
+The API requires authentication. Create the first account interactively
+(the password is prompted for, never passed as an argument):
+
+```bash
+python scripts/create_user.py          # create a user
+python scripts/create_user.py --list   # list existing users
+```
+
+### 5. Run the Server
 
 ```bash
 python -m uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
@@ -131,16 +184,23 @@ Server runs at: http://localhost:8000
 
 ## 🧪 Test the Agent
 
-**API Docs:** http://localhost:8000/docs
+**API Docs:** http://localhost:8000/docs (use the **Authorize** button to log in)
 
 **CLI Test:**
 ```bash
+# 1. Obtain a token
+TOKEN=$(curl -s -X POST "http://localhost:8000/token" \
+  -d "username=<your_username>&password=<your_password>" \
+  | python -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+# 2. Call a protected endpoint with it
 curl -X POST "http://localhost:8000/ask" \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"query": "What are the top 5 most common conditions?"}'
 ```
 
-**Python Test:**
+**Python Test** (bypasses the API layer, so no token needed):
 ```python
 from agent import run_agent
 print(run_agent("How many patients are in the database?"))
@@ -153,9 +213,11 @@ print(run_agent("How many patients are in the database?"))
 - **Analytics Tool**: Statistics, demographics, top conditions/medications
 
 ### API Endpoints
-- `POST /ask` - Query the agent
-- `GET /graph-info` - Graph metadata
-- `GET /health` - Health check
+- `POST /token` - Log in, returns a JWT access token *(public)*
+- `GET /me` - Current authenticated user *(requires token)*
+- `POST /ask` - Query the agent *(requires `doctor` role)*
+- `GET /graph-info` - Graph metadata *(requires `doctor` role)*
+- `GET /health` - Health check *(public)*
 
 ## 📊 Example Queries
 
