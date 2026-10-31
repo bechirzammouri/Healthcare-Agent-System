@@ -2,8 +2,8 @@
 Vector Embedding Tool - Create and manage embeddings for graph nodes
 Uses sentence-transformers for high-quality semantic embeddings
 """
+from db import get_driver
 from sentence_transformers import SentenceTransformer
-from neo4j import GraphDatabase
 import config
 from typing import List, Dict
 import numpy as np
@@ -26,10 +26,7 @@ class VectorEmbeddingManager:
         self.embedding_dim = self.model.get_sentence_embedding_dimension()
         print(f"Model loaded. Embedding dimension: {self.embedding_dim}")
         
-        self.driver = GraphDatabase.driver(
-            config.NEO4J_URI,
-            auth=(config.NEO4J_USERNAME, config.NEO4J_PASSWORD)
-        )
+        self.driver = get_driver()
     
     def generate_embedding(self, text: str) -> List[float]:
         """Generate embedding for a single text"""

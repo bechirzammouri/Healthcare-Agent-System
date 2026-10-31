@@ -5,8 +5,8 @@ import re
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 from typing import Optional, Type
-from neo4j import GraphDatabase
 import config
+from db import get_driver
 
 # Neo4j Community Edition has no role-based access control, so this tool
 # must reject write/procedure keywords itself before running custom Cypher.
@@ -54,13 +54,9 @@ class Neo4jQueryTool(BaseTool):
     ) -> str:
         """Execute the Neo4j query"""
         
-        driver = GraphDatabase.driver(
-            config.NEO4J_URI,
-            auth=(config.NEO4J_USERNAME, config.NEO4J_PASSWORD)
-        )
         
         try:
-            with driver.session() as session:
+            with get_driver().session() as session:
                 # Query templates
                 queries = {
                     "patient_history": """
@@ -154,6 +150,3 @@ class Neo4jQueryTool(BaseTool):
                 
         except Exception as e:
             return f"Error executing Neo4j query: {str(e)}"
-        
-        finally:
-            driver.close()

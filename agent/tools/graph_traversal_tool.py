@@ -4,9 +4,8 @@ Graph Traversal Tool - Advanced graph navigation using complex Cypher queries
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 from typing import Optional, Type
-from neo4j import GraphDatabase
 import config
-
+from db import get_driver
 
 class GraphTraversalInput(BaseModel):
     """Input schema for graph traversal tool"""
@@ -45,13 +44,9 @@ class GraphTraversalTool(BaseTool):
     ) -> str:
         """Execute graph traversal"""
         
-        driver = GraphDatabase.driver(
-            config.NEO4J_URI,
-            auth=(config.NEO4J_USERNAME, config.NEO4J_PASSWORD)
-        )
         
         try:
-            with driver.session() as session:
+            with get_driver().session() as session:
                 # Traversal query templates
                 queries = {
                     "patient_journey": """
@@ -175,6 +170,4 @@ class GraphTraversalTool(BaseTool):
                 
         except Exception as e:
             return f"Error executing graph traversal: {str(e)}"
-        
-        finally:
-            driver.close()
+    

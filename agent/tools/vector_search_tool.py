@@ -4,9 +4,10 @@ Vector Search Tool - Semantic similarity search using vector embeddings
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 from typing import Optional, Type, List, Union
-from neo4j import GraphDatabase
 import config
 import os
+
+from db import get_driver
 
 # Try OpenAI embeddings first, fall back to sentence-transformers
 _embeddings_instance = None
@@ -121,13 +122,9 @@ class VectorSearchTool(BaseTool):
         
         label, index_name = node_mappings[node_type.lower()]
         
-        driver = GraphDatabase.driver(
-            config.NEO4J_URI,
-            auth=(config.NEO4J_USERNAME, config.NEO4J_PASSWORD)
-        )
         
         try:
-            with driver.session() as session:
+            with get_driver().session() as session:
                 # Vector similarity search query
                 query = f"""
                     CALL db.index.vector.queryNodes(
@@ -169,6 +166,3 @@ class VectorSearchTool(BaseTool):
                 
         except Exception as e:
             return f"Error executing vector search: {str(e)}"
-        
-        finally:
-            driver.close()

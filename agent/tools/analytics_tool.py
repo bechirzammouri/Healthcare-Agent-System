@@ -4,8 +4,8 @@ Graph Analytics Tool - Compute statistics and patterns from the healthcare graph
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 from typing import Type
-from neo4j import GraphDatabase
 import config
+from db import get_driver
 
 
 class AnalyticsInput(BaseModel):
@@ -31,13 +31,9 @@ class GraphAnalyticsTool(BaseTool):
     def _run(self, analysis_type: str, limit: int = 10) -> str:
         """Execute the analytics query"""
         
-        driver = GraphDatabase.driver(
-            config.NEO4J_URI,
-            auth=(config.NEO4J_USERNAME, config.NEO4J_PASSWORD)
-        )
         
         try:
-            with driver.session() as session:
+            with get_driver().session() as session:
                 queries = {
                     "node_counts": """
                         MATCH (n)
@@ -95,5 +91,4 @@ class GraphAnalyticsTool(BaseTool):
         except Exception as e:
             return f"Error executing analytics query: {str(e)}"
         
-        finally:
-            driver.close()
+        

@@ -4,10 +4,11 @@ GraphRAG Tool - Hybrid retrieval combining vector similarity and graph traversal
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 from typing import Optional, Type, List, Dict, Any
-from neo4j import GraphDatabase
 import config
 import json
 import os
+
+from db import get_driver
 
 # Try OpenAI embeddings first, fall back to sentence-transformers
 _embeddings_instance = None
@@ -247,13 +248,9 @@ class GraphRAGTool(BaseTool):
         # Generate query embedding
         query_embedding = self._generate_embedding(query_text)
         
-        driver = GraphDatabase.driver(
-            config.NEO4J_URI,
-            auth=(config.NEO4J_USERNAME, config.NEO4J_PASSWORD)
-        )
         
         try:
-            with driver.session() as session:
+            with get_driver().session() as session:
                 results = {
                     "query": query_text,
                     "mode": retrieval_mode,
@@ -340,6 +337,3 @@ class GraphRAGTool(BaseTool):
                 
         except Exception as e:
             return f"Error executing GraphRAG retrieval: {str(e)}"
-        
-        finally:
-            driver.close()

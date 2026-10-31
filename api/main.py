@@ -6,12 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from agent.graph import run_agent
-from neo4j import GraphDatabase
 from auth import routes as auth_routes
 from auth.dependencies import require_role
 from auth.models import User
 import config
 import json
+from db import close_driver, get_driver
+from contextlib import asynccontextmanager
 
 
 class PrettyJSONResponse(JSONResponse):
@@ -25,12 +26,20 @@ class PrettyJSONResponse(JSONResponse):
             separators=(", ", ": "),
         ).encode("utf-8")
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    yield 
+    # close the neo4j driver when the app shuts down
+    close_driver()
+
 
 app = FastAPI(
     title="Healthcare Agent API",
     description="Agentic AI system for healthcare knowledge graph queries",
     version="1.0.0",
-    default_response_class=PrettyJSONResponse
+    default_response_class=PrettyJSONResponse,
+    lifespan=lifespan
 )
 
 # Add CORS middleware
@@ -102,13 +111,9 @@ async def get_graph_info(current_user: User = Depends(require_role("doctor"))):
 
     Requires a bearer token belonging to a user with the 'doctor' role.
     """
-    driver = GraphDatabase.driver(
-        config.NEO4J_URI,
-        auth=(config.NEO4J_USERNAME, config.NEO4J_PASSWORD)
-    )
     
     try:
-        with driver.session() as session:
+        with get_driver().session() as session:
             # Get node counts
             node_count_query = """
                 MATCH (n)
@@ -143,8 +148,6 @@ async def get_graph_info(current_user: User = Depends(require_role("doctor"))):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-    finally:
-        driver.close()
 
 
 @app.get("/health")
